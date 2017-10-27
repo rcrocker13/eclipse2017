@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+	<script src="d3.v4.min.js"></script>
+	<script src="https://d3js.org/d3-array.v1.min.js"></script>
+	<script src="https://d3js.org/d3-geo.v1.min.js"></script>
+	<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+	<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+	<style>
+		path.countries {
+			stroke-width:  1;
+			stroke:  #75739F;
+			fill:  #5EAFC6;
+		}
+		circle.cities {
+			stroke-width:  1;
+			stroke:  #4F442B;
+			fill:  #FCBC34;
+		}
+		circle.centroid {
+			fill:  #75739f;
+			pointer-events:  none;
+		}
+		rect.bbox {
+			fill:  none;
+			stroke-dasharray: 5 5;
+			stroke:  #75739F;
+			stroke-width:  2;
+			pointer-events:  none;
+		}
+		path.graticule {
+			fill:  none;
+			stroke-width: 1;
+			stroke:  #EEEEEE;
+		}
+		path.graticule.outline {
+			stroke:  #9A8B7A;
+		}
+		path.merged {
+			fill:  #9A8B7A;
+			stroke:  #4F442B;
+			stroke-width:  2px;
+		}
+	</style>
+</head>
+<body>
+		<div id="vizcontainer"></div>
+		<svg style="width:500px;height:500px;border:1px lightgray solid;"></svg>
+		<script>
+
+			d3.queue()
+				.defer(d3.json, "world.geojson")
+				// .defer(d3.csv, "cities.csv")
+				// .defer(d3.csv, "eclipse_only.csv")
+				// .defer(d3.csv, "EclipseWithDate.csv")
+				.defer(d3.json, "eclipse_simplifed.geojson")
+				.await(function(error, file1, file2) {
+				          createMap(file1, file2);
+			});
+
+			function createMap(countries, eclipses) {
+
+				// eclipse = eclipses.features.filter( eclipse => eclipse.id === 0);
+				// console.log('eclipse', eclipse) // just one eclipse
+
+				var projection = d3.geoOrthographic()
+				 .scale(200)
+				 .translate([250, 250])
+				 .center([0,0]);
+				var geoPath = d3.geoPath()
+				 	.projection(projection);
+				var featureSize = d3.extent(countries.features, d => geoPath.area(d));
+				var countryColor = d3.scaleQuantize()
+					.domain(featureSize).range(colorbrewer.Reds[7]);
+				var graticule = d3.geoGraticule();
+				var mapZoom = d3.zoom()
+					.on("zoom", zoomed);
+				var zoomSettings = d3.zoomIdentity
+					.translate(0,0)
+					.scale(200);
+				var rotateScale = d3.scaleLinear()
+					.domain([-500, 0, 500])
+					.range([-180, 0, 180]);
+
+				d3.select("svg")
+					.call(mapZoom)
+					.call(mapZoom.transform, zoomSettings);
+
+				function zoomed() {
+					var e = d3.event;
+					var currentRotate = rotateScale(e.transform.x) % 360;
+
+					projection
+						.rotate([currentRotate, 0])
+						.scale(e.transform.k);
+
+					d3.selectAll("path.graticule")
+						.attr("d", geoPath);
+
+					d3.selectAll("path.countries")
+						.attr("d", geoPath)
+						.style("fill", d => countryColor(geoPath.area(d)))
+						.style("stroke", d => d3.rgb(countryColor(geoPath.area(d))).darker());
+				}
+
+				d3.select("svg").insert("path", "path.countries")
+					.datum(graticule)
+					.attr("class", "graticule line")
+					.attr("d", geoPath);
+
+				d3.select("svg").insert("path", "path.countries")
+					.datum(graticule.outline)
+					.attr("class", "graticule outline")
+					.attr("d", geoPath);
+
+			 	d3.select("svg").selectAll("path")
+					.data(countries.features)
+			    .enter()
+			    .append("path")
+			    .attr("d", geoPath)
+			    .attr("class", "countries")
+			    .style("fill", d => countryColor(geoPath.area(d)))
+		    	.style("stroke", d => d3
+		    		.rgb(countryColor(geoPath.area(d)))
+		    		.darker());
+
+		    d3.select("svg")
+		    	.selectAll("path")
+		    	.data(eclipses.features)
+		    	.enter()
+		    	.append("path")
+		    	.attr("d", path)
+
+			}
+
+		</script>
+</body>
+</html>

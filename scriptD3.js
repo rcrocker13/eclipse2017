@@ -9,8 +9,8 @@ const geoPath = d3
   .projection(projection);
 
  d3.queue()
-   .defer(d3.json, "world-110m.json")
-   .defer(d3.json, "eclipse_simplifed.geojson")
+   .defer(d3.json, "world.json")
+   .defer(d3.json, "eclipse.geojson")
    .await(function(error, file1, file2) {
     createGlobe(file1, file2);
  });
@@ -22,7 +22,7 @@ function createGlobe(world, eclipses) {
 
   eclipses.features.forEach( (eclipse, i) => {
     if (!([3,6,7,11,12,20,22,24,32,34,36,37,38,39,41,42,54,56,60,62]).includes(i)){
-      console.log(eclipse);
+      // console.log(eclipse);
       renderEclipse(eclipse);
     }
   });

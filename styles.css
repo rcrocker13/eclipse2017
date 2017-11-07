@@ -1,0 +1,13 @@
+#vizcontainer {
+  width: 400px;
+  height: 475px;
+}
+
+iframe {
+  margin: 0;
+  padding: 0;
+  border: none;
+  width: 400px;
+  height: 475px;
+  overflow: scroll;
+}
